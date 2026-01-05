@@ -1,6 +1,6 @@
-# Salesforce OAuth Security Presentation
+# Salesforce OAuth Security Guide
 
-A comprehensive presentation covering Salesforce OAuth authentication and authorization concepts, with practical hotel analogies to make security concepts accessible.
+A comprehensive guide to Salesforce OAuth 2.0 authentication covering all three flows with security best practices, detailed documentation, and working implementation examples.
 
 ## 📚 Contents
 
@@ -9,11 +9,11 @@ A comprehensive presentation covering Salesforce OAuth authentication and author
 - **OAuth Access Tokens** - Components and lifecycle
 - **Session Tracking & Governance** - Security accountability
 - **Three OAuth Flows:**
-  - Web Server Flow
-  - JWT Bearer Flow
-  - Client Credentials Flow
+  - Web Server Flow (user-interactive)
+  - JWT Bearer Flow (server-to-server)
+  - Client Credentials Flow (machine-to-machine)
 - **Security Best Practices**
-- **Real-world scenarios and examples**
+- **Implementation examples in Python and Node.js**
 
 ## 🎯 Target Audience
 
@@ -23,10 +23,19 @@ A comprehensive presentation covering Salesforce OAuth authentication and author
 - Solution Architects
 - Technical Managers
 
-## 📖 Files
+## 📖 Documentation
 
-- `Salesforce_OAuth_Security_Presentation.md` - Main presentation content
-- `HOW_TO_GENERATE_PPTX.md` - Instructions for converting to PowerPoint
+### Security & Overview
+- **[Salesforce OAuth Security Presentation](Salesforce_OAuth_Security_Presentation.md)** - Comprehensive security presentation with hotel analogies
+- [HOW_TO_GENERATE_PPTX.md](HOW_TO_GENERATE_PPTX.md) - Convert presentation to PowerPoint
+
+### OAuth Flow Details
+- [Web Server Flow](docs/oauth-flows/oauth_web_server_flow.md) - Interactive user authentication
+- [JWT Bearer Flow](docs/oauth-flows/oauth_jwt_flow.md) - Certificate-based server authentication
+- [Client Credentials Flow](docs/oauth-flows/oauth_client_credentials_flow.md) - Machine-to-machine authentication
+
+### Implementation Guides
+- [Demo Code Documentation](README_DEMOS.md) - Setup and usage for Python & Node.js examples
 
 ## 🚀 Quick Start
 
