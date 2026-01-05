@@ -87,6 +87,25 @@ A temporary credential that grants access to Salesforce resources without sharin
 - Can be deactivated if lost
 - Trackable (hotel knows when you used it)
 
+### What is a Refresh Token?
+A long-lived credential used to obtain new access tokens without re-authentication.
+
+**Hotel Analogy:** Your loyalty membership card
+- Allows you to get new room keys without checking in again
+- Long-lasting (doesn't expire at checkout like room key)
+- More powerful (can create new access tokens)
+- Must be stored very securely (like keeping your passport safe)
+- Can be revoked if compromised
+
+**Key Differences:**
+- **Access Token:** Short-lived (hours), used for API calls, less sensitive if leaked (expires quickly)
+- **Refresh Token:** Long-lived (days/months), used to get new access tokens, very sensitive (must be encrypted)
+
+**Not all OAuth flows provide refresh tokens:**
+- ✅ Web Server Flow: Yes (for long-term user sessions)
+- ❌ JWT Flow: No (generate new token with certificate)
+- ❌ Client Credentials Flow: No (generate new token with client secret)
+
 ---
 
 ## Slide 7: Token Components - What's Inside?
@@ -155,197 +174,113 @@ When the token becomes invalid
 ### Use Case: User-Interactive Applications
 **Best for:** Web applications where users log in through a browser
 
-### The Process:
-```
-1. User clicks "Login with Salesforce"
-2. Redirected to Salesforce login page
-3. User enters credentials + MFA
-4. User approves application access
-5. Salesforce returns authorization code
-6. App exchanges code for access token
-7. App uses token to access Salesforce data
-```
-
-**Hotel Analogy:**
-- Guest arrives → Checks in at front desk → Shows ID & credit card → Receives key card → Accesses room
+**Hotel Analogy:** Guest arrives → Checks in at front desk → Shows ID & credit card → Receives key card → Accesses room
 
 ### Key Features:
 - ✅ Most secure for user-facing apps
 - ✅ User explicitly grants permission
-- ✅ Refresh tokens for long-term access
+- ✅ **Provides refresh tokens** for long-term access
 - ✅ User can revoke access anytime
+- ✅ Full user context and permissions
+
+📄 **[Full documentation and implementation guide →](oauth_web_server_flow.md)**
+
+🔗 **[Official Salesforce Documentation →](https://help.salesforce.com/s/articleView?id=xcloud.remoteaccess_oauth_web_server_flow.htm&type=5)**
 
 ---
 
-## Slide 11: Web Server Flow - Diagram
-
-```
-┌─────────┐                ┌──────────────┐                ┌────────────┐
-│  User   │                │  Your App    │                │ Salesforce │
-└────┬────┘                └──────┬───────┘                └─────┬──────┘
-     │                             │                              │
-     │ 1. Click "Login"            │                              │
-     ├────────────────────────────>│                              │
-     │                             │                              │
-     │                             │ 2. Redirect to SF Login      │
-     │                             ├─────────────────────────────>│
-     │                                                             │
-     │ 3. Enter Credentials + MFA                                 │
-     ├────────────────────────────────────────────────────────────>│
-     │                                                             │
-     │ 4. Authorization Code                                      │
-     │<────────────────────────────────────────────────────────────┤
-     │                             │                              │
-     │ 5. Pass Code to App         │                              │
-     ├────────────────────────────>│                              │
-     │                             │                              │
-     │                             │ 6. Exchange Code for Token   │
-     │                             ├─────────────────────────────>│
-     │                             │                              │
-     │                             │ 7. Access Token + Refresh    │
-     │                             │<─────────────────────────────┤
-     │                             │                              │
-     │ 8. Access Granted           │                              │
-     │<────────────────────────────┤                              │
-```
-
----
-
-## Slide 12: OAuth Flow #2 - JWT (JSON Web Token) Flow
+## Slide 11: OAuth Flow #2 - JWT (JSON Web Token) Flow
 
 ### Use Case: Server-to-Server Integration
-**Best for:** Trusted backend integrations, no user interaction needed
+**Best for:** When you need **higher security** or **multiple users** in automated integrations
 
-### The Process:
-```
-1. Pre-authorized certificate stored securely
-2. App creates JWT (signed with certificate)
-3. App sends JWT to Salesforce
-4. Salesforce validates signature & certificate
-5. Salesforce returns access token
-6. App uses token to access data
-```
-
-**Hotel Analogy:**
-- **VIP Guest with Pre-Authorization**
-- Hotel already has your profile & preferences
-- Security recognizes your credentials instantly
-- Automatic check-in → Key card issued immediately
-- No front desk interaction needed
+**Hotel Analogy:** VIP Guest with Pre-Authorization - Hotel already has your profile, security recognizes your credentials instantly, automatic check-in
 
 ### Key Features:
 - ✅ No user interaction required
-- ✅ Certificate-based security (very secure)
-- ✅ Perfect for automated jobs
-- ✅ Pre-authorized access
-- ⚠️ Requires certificate management
+- ✅ **Certificate-based security (most secure)**
+- ✅ **Can be configured for different users** (pre-authorized)
+- ✅ Perfect for automated jobs with user context
+- ❌ **Does NOT provide refresh tokens** (per Salesforce: "This flow never issues a refresh token")
+- ⚠️ Requires certificate management (more complex setup)
+
+
+**When to choose JWT:**
+- Need **stronger security** than client credentials
+- Need **multiple user contexts** (different pre-authorized users)
+- Scheduled jobs that require specific user permissions
+- Enterprise-grade integrations
+
+📄 **[Full documentation and implementation guide →](oauth_jwt_flow.md)**
+
+🔗 **[Official Salesforce Documentation →](https://help.salesforce.com/s/articleView?id=xcloud.remoteaccess_oauth_jwt_flow.htm&type=5)**
 
 ---
 
-## Slide 13: JWT Flow - Diagram
-
-```
-┌──────────────────┐                          ┌────────────────┐
-│  Backend System  │                          │   Salesforce   │
-│  (with Cert)     │                          │                │
-└────────┬─────────┘                          └────────┬───────┘
-         │                                             │
-         │ 1. Create JWT (signed with cert)           │
-         │                                             │
-         │ 2. Send JWT to Salesforce                  │
-         ├────────────────────────────────────────────>│
-         │                                             │
-         │                                   3. Validate JWT
-         │                                      & Certificate
-         │                                             │
-         │ 4. Access Token                            │
-         │<────────────────────────────────────────────┤
-         │                                             │
-         │ 5. Make API calls with token               │
-         ├────────────────────────────────────────────>│
-         │                                             │
-         │ 6. Return data                             │
-         │<────────────────────────────────────────────┤
-```
-
-**No user login required - fully automated!**
-
----
-
-## Slide 14: OAuth Flow #3 - Client Credentials Flow
+## Slide 12: OAuth Flow #3 - Client Credentials Flow
 
 ### Use Case: Machine-to-Machine Communication
-**Best for:** Integrations where app acts on its own behalf (not a specific user)
+**Best for:** **Simple integrations** with a **single user context** (defined on Salesforce side)
 
-### The Process:
-```
-1. App has Client ID + Client Secret
-2. App sends credentials to Salesforce
-3. Salesforce validates credentials
-4. Salesforce returns access token
-5. App uses token (acting as itself, not a user)
-```
-
-**Hotel Analogy:**
-- **Service Provider Access**
-- Cleaning service has master access card
-- Not tied to any specific guest
-- Access during specific hours
-- Can access multiple rooms but only for authorized tasks
-- Company (not individual cleaner) is accountable
+**Hotel Analogy:** Service Provider Access - Cleaning service has master access card, not tied to any specific guest
 
 ### Key Features:
-- ✅ App authenticates as itself
-- ✅ No user context needed
-- ✅ Simpler than JWT (no certificates)
+- ✅ **Simplest setup** (no certificates needed)
+- ✅ **Always runs as ONE specific user** (configured in Connected App)
+- ❌ **No refresh token** (get new access token with credentials)
+- ✅ No user interaction required
+- ✅ Quick to implement
 - ⚠️ Must protect client secret carefully
-- ⚠️ Limited to app-level operations
+- ⚠️ Limited to single user context
+- ⚠️ Lower security than JWT
+
+**When to choose Client Credentials:**
+- Need **simple, fast setup**
+- Only need **one user context** (always same user)
+- App-level operations
+- Don't need certificate management complexity
+
+📄 **[Full documentation and implementation guide →](oauth_client_credentials_flow.md)**
+
+🔗 **[Official Salesforce Documentation →](https://help.salesforce.com/s/articleView?id=xcloud.remoteaccess_oauth_client_credentials_flow.htm&type=5)**
 
 ---
 
-## Slide 15: Client Credentials Flow - Diagram
-
-```
-┌──────────────────┐                          ┌────────────────┐
-│  Integration     │                          │   Salesforce   │
-│  (Client ID +    │                          │                │
-│   Secret)        │                          │                │
-└────────┬─────────┘                          └────────┬───────┘
-         │                                             │
-         │ 1. Send Client ID + Secret                 │
-         ├────────────────────────────────────────────>│
-         │                                             │
-         │                                   2. Validate
-         │                                      Credentials
-         │                                             │
-         │ 3. Access Token                            │
-         │<────────────────────────────────────────────┤
-         │                                             │
-         │ 4. API Calls (as the app, not a user)      │
-         ├────────────────────────────────────────────>│
-         │                                             │
-         │ 5. Return data                             │
-         │<────────────────────────────────────────────┤
-```
-
----
-
-## Slide 16: Comparing the Three Flows
+## Slide 13: Comparing the Three Flows - Summary Table
 
 | Feature | Web Server Flow | JWT Flow | Client Credentials |
 |---------|----------------|----------|-------------------|
-| **User Interaction** | Required | Not Required | Not Required |
-| **Use Case** | Web/Mobile Apps | Server-to-Server | Machine-to-Machine |
-| **Security Method** | User login + OAuth | Certificate | Client Secret |
-| **User Context** | Yes (acts as user) | Yes (pre-authorized user) | No (acts as app) |
-| **Complexity** | Medium | High | Low |
-| **Refresh Token** | Yes | No (get new token) | No (get new token) |
-| **Best For** | Interactive apps | Scheduled jobs | App-level operations |
+| **User Interaction** | ✅ Required | ❌ Not Required | ❌ Not Required |
+| **User Context** | Multiple users (live login) | Multiple users (pre-authorized) | **Single user** (defined in SF) |
+| **Security Level** | High | **Very High** | Medium |
+| **Security Method** | User login + OAuth | **Certificate** | Client Secret |
+| **Refresh Token** | ✅ Yes | ❌ No | ❌ No |
+| **Token Renewal** | Use refresh token | Create new JWT | Use client credentials |
+| **Best For** | Interactive apps | **High-security jobs, multiple users** | **Simple integrations, one user** |
+| **Use Case** | Web/Mobile Apps | Scheduled jobs needing security/users | App-level operations |
+
+**Why JWT doesn't need refresh tokens:** The certificate itself acts as the refresh mechanism - you can always generate a new access token by creating and signing a new JWT with your certificate.
+
+### **Decision Guide:**
+
+**Choose JWT when:**
+- ✅ Need **higher security** (certificate-based)
+- ✅ Need **multiple user contexts** in automation
+- ✅ Enterprise-grade integration requirements
+
+**Choose Client Credentials when:**
+- ✅ Need **simple, quick setup**
+- ✅ **One user context** is sufficient
+- ✅ Don't want certificate management overhead
+
+**Choose Web Server when:**
+- ✅ Users need to **authenticate themselves**
+- ✅ Interactive application
 
 **Hotel Analogy:**
-- **Web Server:** Guest checking in personally
-- **JWT:** VIP with pre-authorization
-- **Client Credentials:** Service company access
+- **Web Server:** Guest checking in personally (user present)
+- **JWT:** VIP with pre-authorization (secure, can be different VIPs)
+- **Client Credentials:** Service company access (always same company, simple card)
 
 ---
 
@@ -506,26 +441,8 @@ Session → User → Integration → Team → Business Owner
 
 ---
 
-## Slide 23: Implementation Checklist
 
-### For Your Salesforce Org:
-
-- [ ] Enable MFA for all users
-- [ ] Create separate Connected Apps per integration
-- [ ] Use naming conventions for traceability
-- [ ] Implement token rotation policies
-- [ ] Set up session monitoring & alerts
-- [ ] Document integration ownership
-- [ ] Regular access reviews (quarterly)
-- [ ] Use appropriate OAuth flow per use case
-- [ ] Encrypt stored credentials
-- [ ] Enable IP restrictions where possible
-- [ ] Set session timeout policies
-- [ ] Create incident response plan
-
----
-
-## Slide 24: Key Takeaways
+## Slide 23: Key Takeaways
 
 ### 🔑 Remember:
 
@@ -542,35 +459,4 @@ Session → User → Integration → Team → Business Owner
 
 ---
 
-## Slide 25: Questions & Discussion
-
 **Thank you!**
-
-### Additional Resources:
-- Salesforce OAuth 2.0 Documentation
-- Security Implementation Guide
-- Integration Best Practices
-- Session Management Guide
-
----
-
-## Appendix: Technical Details
-
-### Token Structure Example:
-```json
-{
-  "access_token": "00D50000000IZ3Z!AQcAQH0dMHZ...",
-  "instance_url": "https://yourInstance.salesforce.com",
-  "id": "https://login.salesforce.com/id/00D50000000IZ3Z/00550000000iY8Z",
-  "token_type": "Bearer",
-  "issued_at": "1609459200000",
-  "signature": "xyz123..."
-}
-```
-
-### Connected App Configuration:
-- Callback URL
-- OAuth Scopes
-- Certificate (for JWT)
-- Session Policies
-- IP Restrictions
